@@ -124,6 +124,7 @@ def CreateMesh(LOD):
         
     with open (UEXPEditor.UexpPath, 'rb') as f:         
         def ReadFace(rOffset):
+            print("rOffset: ", rOffset)
             f.seek(rOffset)
             
             if LODfSize == 12:
@@ -138,11 +139,26 @@ def CreateMesh(LOD):
                 
             if LODfSize == 6:
                 bData = f.read(2)
-                v1 = struct.unpack('<H',bData)[0]
+                #print("readed ", len(bData), " bytes")
+                if len(bData) == 2:
+                    v1 = struct.unpack('<H',bData)[0]
+                else:
+                    #print('EOF')
+                    v1 = ''
                 bData = f.read(2)
-                v2 = struct.unpack('<H',bData)[0]
+                #print("readed ", len(bData), " bytes")
+                if len(bData) == 2:
+                    v2 = struct.unpack('<H',bData)[0]
+                else:
+                    #print('EOF')
+                    v2 = ''
                 bData = f.read(2)
-                v3 = struct.unpack('<H',bData)[0]            
+                #print("readed ", len(bData), " bytes")
+                if len(bData) == 2:
+                    v3 = struct.unpack('<H',bData)[0]
+                else:
+                    #print('EOF')
+                    v3 = ''
                 face = [v1,v2,v3]            
                 return face
         
@@ -153,6 +169,9 @@ def CreateMesh(LOD):
         for n in range (LODfStart,LODfEnd,LODfSize):
             nface = ReadFace(n)
             fList.append(nface)
+            if nface[0] == '' or nface[1] == '' or nface[2] == '':
+                print("Forced break!")
+                break
     
     #Create vertex cloud
     def VCloud(object_name, vList, eList=[],fList=[]):
@@ -165,17 +184,30 @@ def CreateMesh(LOD):
         bm = bmesh.new()
     
         for face in fList:          
-            v1i = face[0]        
-            v1co = vList[v1i]
-            v1 = bm.verts.new(v1co)
+            v1i = face[0]
+            if len(vList) > v1i:
+                v1co = vList[v1i]
+                v1 = bm.verts.new(v1co)
+            else:
+                print("no new vertices break (pos: ", v1i, " of ", len(vList), ")")
+                break
 
             v2i = face[1]
-            v2co = vList[v2i]
-            v2 = bm.verts.new(v2co)
+
+            if len(vList) > v2i:
+                v2co = vList[v2i]
+                v2 = bm.verts.new(v2co)
+            else:
+                print("no new vertices break (pos: ", v1i, " of ", len(vList), ")")
+                break
             
             v3i = face[2]
-            v3co = vList[v3i]
-            v3 = bm.verts.new(v3co)
+            if len(vList) > v3i:
+                v3co = vList[v3i]
+                v3 = bm.verts.new(v3co)
+            else:
+                print("no new vertices break (pos: ", v1i, " of ", len(vList), ")")
+                break
 
             f1 = [v1,v2,v3]
             bm.faces.new(f1)
